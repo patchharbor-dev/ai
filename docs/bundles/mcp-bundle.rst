@@ -977,6 +977,51 @@ A client is also iterable, which is handy for fanning a question out over every 
 
 When exactly one client is configured, a plain ``McpClientInterface`` type hint resolves to it.
 
+Calling a Public HTTP Server
+............................
+
+With ``symfony/http-client`` installed, a named client can use the application's HTTP client.
+For a public server such as the `Chain.Love MCP gateway`_, omit authentication headers.
+
+.. code-block:: yaml
+
+    # config/packages/mcp.yaml
+    mcp:
+        clients:
+            infrastructure:
+                servers:
+                    chain_love:
+                        transport: http
+                        url: 'https://app.chain.love/mcp'
+
+Inject the client by its configuration name and select the server within that client.
+
+::
+
+    namespace App\Mcp;
+
+    use Mcp\Schema\Result\CallToolResult;
+    use Symfony\AI\McpBundle\Client\McpClientInterface;
+    use Symfony\Component\DependencyInjection\Attribute\Target;
+
+    final class InfrastructureCategories
+    {
+        public function __construct(
+            #[Target('infrastructure')] private McpClientInterface $client,
+        ) {
+        }
+
+        public function forFilecoin(): CallToolResult
+        {
+            return $this->client->get('chain_love')->callTool('discover_categories', [
+                'chain' => 'filecoin',
+            ]);
+        }
+    }
+
+The read-only call returns the infrastructure categories available for Filecoin. Check
+``$result->isError`` before using the result content.
+
 Connection Lifecycle
 ....................
 
@@ -1285,5 +1330,6 @@ The events are simple marker events that notify when lists have changed, but don
 .. _`mcp/sdk`: https://github.com/modelcontextprotocol/php-sdk
 .. _`Claude Desktop`: https://claude.ai/download
 .. _`MCP Server List`: https://modelcontextprotocol.io/examples
+.. _`Chain.Love MCP gateway`: https://github.com/Chain-Love/chain.love-mcp
 .. _`Symfony Cache documentation`: https://symfony.com/doc/current/components/cache.html
 .. _`Symfony Lock component`: https://symfony.com/doc/current/components/lock.html
